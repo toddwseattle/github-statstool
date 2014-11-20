@@ -58,6 +58,14 @@ function pad(str, len, pad, dir) {
 function RepoReport(theargs){
 	if(theargs.v>0) {
 	//verbose report
+	   this.fields = [
+		{name : "name", len :30,title:"repo name"},
+    	{name : "owner.login", len :20,title:"owner"},
+    	{name: "private",len :4,title : "prv"},
+    	{name: "updated_at",len :21,title: "updated"},
+    	{name : "description", len :40,title:"description"} ,
+    	{name : "html_url", len :0,title:"Url"}
+    	];
 	} else {
 		// compact report
 
@@ -85,6 +93,7 @@ function RepoReport(theargs){
 	this.getDataline=function(obj){
 		if(typeof(obj)!='Undefined');
 		var data="";
+		var field="";
 		var props;
 		for (var i = 0; i < this.fields.length; i++) {
 			if(this.fields[i].name.indexOf('.')>0) // its a sub property
@@ -97,7 +106,15 @@ function RepoReport(theargs){
 
 			} 
 			else { // its a simple property
-			 data+=pad(obj[this.fields[i].name],this.fields[i].len);
+				switch(typeof(obj[this.fields[i].name])) {
+					case "boolean" : field=(obj[this.fields[i].name] ? "Y" : "N");
+								break;
+					case "number"  : field=obj[this.fields[i].name].toString();
+								break;
+					default	   : field=obj[this.fields[i].name];
+
+				}
+			 data+=pad(field,this.fields[i].len);
 
 			}
 		};
