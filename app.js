@@ -56,6 +56,7 @@ function pad(str, len, pad, dir) {
 
 
 function RepoReport(theargs){
+	this.myargs=theargs;
 	if(theargs.v>0) {
 	//verbose report
 	   this.fields = [
@@ -120,7 +121,16 @@ function RepoReport(theargs){
 		};
 		return data;
 	}
-}
+	this.outputrepos=function(res){
+		if(this.myargs.h) {
+			console.log(this.getHeaders());
+			console.log(new Array(this.getWidth()).join('-'));
+		}
+		for	(index = 0; index < res.length; index++){
+			console.log(this.getDataline(res[index]));
+		}
+	}
+} // object
 /**
  * Outputs allrepos for the currently authenticated user.  function assumes the user is
  * authenticated on call
@@ -149,15 +159,37 @@ function allrepos(theargs){
 		console.log('%d repos for user %s\n',res.length,theargs.u);
         var reportdesc=new RepoReport(theargs);
 		// output headers
-		if(theargs.h) {
-			console.log(reportdesc.getHeaders());
-			console.log(new Array(reportdesc.getWidth()).join('-'));
-		}
-		for	(index = 0; index < res.length; index++){
-			console.log(reportdesc.getDataline(res[index]));
-		}
+		reportdesc.outputrepos(res);
+		
 		});
 }
+/**
+ * Outputs a report on the organizations repos to the console
+ * @param  {yargs argv} theargument an argv using the yargs library
+ * @param  {string} org         name of an org (optional will look for theargument.o)
+ * @return {no return}             no return
+ */
+function orgReposreport(theargument,orgz)
+{
+	if(typeof(orgz)=="undefined") orgz=theargument.o;
+	github.orgs.get({org : orgz},function(err,res){
+					if(typeof(res)!='Undefined'){
+						var orgDetail=res;
+						github.repos.getFromOrg({org:orgz},function(err,res){
+							if(typeof(res)!='Undefined'){
+								var orgreposrep=new RepoReport(theargument);
+								orgreposrep.outputrepos(res);
+							} else {
+								console.log('err on org repos get'+JSON.stringify(err));
+							}
+						});
+					} else {
+					console.log('err on org get from github:'+JSON.stringify(err));
+				}
+
+				});
+}
+
 /**
  * Main program follows
  * @type {github is of type GitHubApi}
@@ -193,7 +225,28 @@ github.authenticate({
     username: GITSTAT.user,
     password: GITSTAT.password
 });
+if(argv.o) 
+	{
+		orgReposreport(argv);
+		if(argv.t)
+		{
+			if(typeof(argv.t)=="boolean") { 
+					// then list all teams in the organization.
+				github.orgs.get({org : argv.o},function(err,res){
+					console.log("Org: "+argv.o);
+					console.log('Json: '+JSON.stringify(res));
+					console.log('err:'+JSON.stringify(err));
+				});
+				github.orgs.getTeam({org: argv.o},function(err,res){
+					console.log("Org Teams for: "+argv.o);
+					console.log('Json: '+JSON.stringify(res));
+					console.log('err:'+JSON.stringify(err));
 
+				});
+			}
+
+		}
+	}
 if(argv.a) allrepos(argv);  // output all repos.
 	
 
